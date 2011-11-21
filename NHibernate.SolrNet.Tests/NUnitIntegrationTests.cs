@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using log4net.Config;
-using MbUnit.Framework;
+using NUnit.Framework;
 using Microsoft.Practices.ServiceLocation;
 using NHibernate.SolrNet.Impl;
 using NHibernate.Tool.hbm2ddl;
@@ -33,7 +33,7 @@ using SolrNet.Mapping;
 namespace NHibernate.SolrNet.Tests {
     [TestFixture]
     [Category("Integration")]
-    public class IntegrationTests {
+    public class NUnitIntegrationTests {
         [Test]
         public void Insert() {
             using (var session = sessionFactory.OpenSession()) {
@@ -82,31 +82,29 @@ namespace NHibernate.SolrNet.Tests {
             }
 
             //wait for all threads to complete
-            //unfortunately WaitHandle.WaitAll(_resetEvents); is not working...
-            while (_requestsCount < 200)
-            {
+            System.Diagnostics.Debug.WriteLine(string.Format("All threads started: {0}", DateTime.Now));
+            WaitHandle.WaitAll(_resetEvents);
+            System.Diagnostics.Debug.WriteLine(string.Format("All threads finished: {0}", DateTime.Now));
 
-            }
-            
             Assert.AreEqual(200, _requestsCount);
 
             using (var session = cfgHelper.OpenSession(sessionFactory))
             {
                 var entities = session.QueryOver<Entity>().List();
-                //Assert.AreEqual(200, entities.Count);
-                Gallio.Framework.DiagnosticLog.WriteLine(entities.Count.ToString());
+                Assert.AreEqual(200, entities.Count);
+                //Gallio.Framework.DiagnosticLog.WriteLine(entities.Count.ToString());
+                //System.Diagnostics.Debug.WriteLine(entities.Count.ToString());
             }
 
             using (var session = cfgHelper.OpenSession(sessionFactory))
             {
                 var entities = session.CreateSolrQuery("nhibernate").List<Entity>();
-                Gallio.Framework.DiagnosticLog.WriteLine(entities.Count.ToString());
+                //Gallio.Framework.DiagnosticLog.WriteLine(entities.Count.ToString());
+                //System.Diagnostics.Debug.WriteLine(entities.Count.ToString());
                 Assert.AreEqual(200, entities.Count);
             }
 
-            Assert.AreEqual(0, _errorsCount);
-
-
+            System.Diagnostics.Debug.WriteLine(string.Format("Solr errors: {0}", _errorsCount));
         }
 
         private void DoWork(object o)
@@ -119,10 +117,8 @@ namespace NHibernate.SolrNet.Tests {
                     try
                     {
                         Interlocked.Increment(ref _requestsCount);
-                        //var request = WebRequest.Create("http://localhost:25827/home/add");
-                        //request.Method = "GET";
-                        //HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                        Console.WriteLine(string.Format("[Thread {0}:{1}] {2}", index, i, "OK"));
+
+                        //System.Diagnostics.Debug.WriteLine(string.Format("[Thread {0}:{1}] {2}", index, i, "OK"));
                         using (var session = sessionFactory.OpenSession())
                         {
                             session.Save(new Entity
@@ -133,12 +129,12 @@ namespace NHibernate.SolrNet.Tests {
                             });
                             session.Flush();
                         }
-                        //if (response.StatusCode != HttpStatusCode.OK)
-                            //Interlocked.Increment(ref _errorsCount);
                     }
                     catch(Exception ex)
                     {
-                        Gallio.Framework.DiagnosticLog.WriteLine(ex.Message);
+                        //Gallio.Framework.DiagnosticLog.WriteLine(ex);
+                        System.Diagnostics.Debug.WriteLine(string.Format("[Thread {0}:{1}] {2}", index, i, "Error"));
+                        //System.Diagnostics.Debug.WriteLine(string.Format("[Thread {0}:{1}] {2}", index, i, "Error"));
                         Interlocked.Increment(ref _errorsCount);
                     }
 
@@ -156,7 +152,7 @@ namespace NHibernate.SolrNet.Tests {
 
 
         private Configuration SetupNHibernate() {
-            var cfg = ConfigurationExtensions.GetEmptyNHConfig();
+            var cfg = ConfigurationExtensions.GetEmptyNHConfigForSqlExpress();
             cfg.AddXmlString(@"<?xml version='1.0' encoding='utf-8' ?>
 <hibernate-mapping xmlns='urn:nhibernate-mapping-2.2' default-lazy='false'>
   <class name='NHibernate.SolrNet.Tests.Entity, NHibernate.SolrNet.Tests'>
@@ -190,7 +186,7 @@ namespace NHibernate.SolrNet.Tests {
             solr.Commit();
         }
 
-        [FixtureSetUp]
+        [TestFixtureSetUp]
         public void FixtureSetup() {
             BasicConfigurator.Configure();
             SetupSolr();
@@ -202,7 +198,7 @@ namespace NHibernate.SolrNet.Tests {
             sessionFactory = cfg.BuildSessionFactory();
         }
 
-        [FixtureTearDown]
+        [TestFixtureTearDown]
         public void FixtureTearDown() {
             sessionFactory.Dispose();
         }

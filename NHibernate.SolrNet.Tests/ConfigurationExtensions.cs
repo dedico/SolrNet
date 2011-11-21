@@ -38,6 +38,21 @@ namespace NHibernate.SolrNet.Tests {
             return nhConfig;
         }
 
+        public static Configuration GetEmptyNHConfigForSqlExpress()
+        {
+            var nhConfig = new Configuration
+            {
+                Properties = new Dictionary<string, string> {
+                    {Environment.ConnectionProvider, typeof(DriverConnectionProvider).FullName},
+                    {Environment.ConnectionDriver, typeof(SqlClientDriver).FullName},
+                    {Environment.Dialect, typeof(MsSql2005Dialect).FullName},
+                    {Environment.ConnectionString, @"Data Source=.\SQLExpress;Initial Catalog=SolrNet;Integrated Security=SSPI;"},
+                    {Environment.ProxyFactoryFactoryClass, typeof(ProxyFactoryFactory).AssemblyQualifiedName},
+                }
+            };
+            return nhConfig;
+        }
+
         public static Configuration GetNhConfig() {
             var nhConfig = GetEmptyNHConfig();
             nhConfig.Register(typeof (Entity));
